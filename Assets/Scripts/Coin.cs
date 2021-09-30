@@ -4,7 +4,7 @@ using UnityEngine;
 
 public class Coin : MonoBehaviour
 {
-    [SerializeField] private int _coinPoints;
+    [SerializeField] private int _coinsAmount;
 
 
 
@@ -14,7 +14,7 @@ public class Coin : MonoBehaviour
 
         if (player != null)
         {
-            player.AddCoin(_coinPoints);
+            player.CoinsAmount += _coinsAmount;
             Destroy(gameObject);
         }
     }

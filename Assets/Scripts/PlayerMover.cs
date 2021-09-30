@@ -1,18 +1,29 @@
+using System;
+using System.Collections;
+using TMPro;
+using UnityEditor.Experimental.GraphView;
 using UnityEngine;
+using UnityEngine.SceneManagement;
+using UnityEngine.Serialization;
+using UnityEngine.UI;
+
+
 
 
 [RequireComponent(typeof(Rigidbody2D))]
 
-public class PlayerMover:MonoBehaviour
+public class PlayerMover : MonoBehaviour
 {
     private Rigidbody2D _rigidbody;
+
+    
 
     [SerializeField] private float _speed;
 
     [SerializeField] private SpriteRenderer _spriteRenderer;
     [SerializeField] private float _jumpForce;
     [SerializeField] private Transform _groundChecker;
-    [SerializeField] private float  _groundCheckerRadius;
+    [SerializeField] private float _groundCheckerRadius;
     [SerializeField] private LayerMask _whatIsGround;
     [SerializeField] private Collider2D _headCollider;
     [SerializeField] private float _headCheckerRadius;
@@ -24,16 +35,51 @@ public class PlayerMover:MonoBehaviour
     [SerializeField] private string _jumpAnimatorKey;
     [SerializeField] private string _crouchAnimatorKey;
 
+    [SerializeField] private int _maxHp;
+    private int _currentHp;
+
+    [Header("UI")]
+    [SerializeField] private TMP_Text _coinAmountText;
+    [SerializeField] private Slider _hpBar;
+
     private float _direction;
     private bool _Jump;
     private bool _crawl;
-    // Start is called before the first frame update
+    
+
+    private int _coinsAmount;
+    public int CoinsAmount
+    {
+        get => _coinsAmount;
+        set
+        {
+            _coinsAmount = value;
+            _coinAmountText.text = value.ToString();
+        }
+    }
+
+    private int CurrentHp
+    {
+        get => _currentHp;
+         
+        set
+        {
+            if (value > _maxHp)
+                value = _maxHp; 
+            _currentHp = value;
+            _hpBar.value = value;
+        }
+    }
+
+
     private void Start()
     {
+        CoinsAmount = 0;
+        _hpBar.maxValue = _maxHp;
+        CurrentHp = _maxHp;
         _rigidbody = GetComponent<Rigidbody2D>();
     }
 
-    // Update is called once per frame
     private void Update()
     {
         _direction = Input.GetAxisRaw("Horizontal");
@@ -88,7 +134,20 @@ public class PlayerMover:MonoBehaviour
 
     public void AddHp(int hpPoints)
     {
-        Debug.Log(message: "Hp raised" + hpPoints); 
+
+        int missingHp = _maxHp - CurrentHp;
+        int pointToAdd = missingHp > hpPoints ? hpPoints : missingHp;
+        StartCoroutine(RestoreHp(pointToAdd));
+    }
+
+    private IEnumerator RestoreHp(int pointToAdd)
+    {
+        while (pointToAdd != 0)
+        {
+            pointToAdd--;
+            CurrentHp++;
+            yield return new WaitForSeconds(0.2f);
+        }
     }
 
     public void AddMp(int mpPoints)
@@ -96,9 +155,19 @@ public class PlayerMover:MonoBehaviour
         Debug.Log(message: "Mp raised" + mpPoints);
     }
 
-    public void AddCoin(int coinPoints)
+    public void TakeDamage(int damage)
     {
-        Debug.Log(message: "Coin raised" + coinPoints);
+        CurrentHp -= damage;
+        if (_currentHp <= 0) 
+        {
+            gameObject.SetActive(false);
+            Invoke(nameof(ReloadScene), 1f);
+        }
+    }
+
+    private void ReloadScene()
+    {
+        SceneManager.LoadScene(SceneManager.GetActiveScene().buildIndex);
     }
 }
  
